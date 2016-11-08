@@ -54,6 +54,8 @@
 	<classpathentry kind="lib" path="lib/org.eclipse.jdt.source-4.6.1/plugins/org.junit.source_4.12.0.v201504281640.jar"/>
 	<classpathentry kind="lib" path="lib/org.eclipse.jdt.source-4.6.1/artifacts.jar"/>
 	<classpathentry kind="lib" path="lib/org.eclipse.jdt.source-4.6.1/content.jar"/>
+	<classpathentry kind="lib" path="lib/commons-cli-1.3.1/commons-cli-1.3.1-javadoc.jar"/>
+	<classpathentry kind="lib" path="lib/commons-cli-1.3.1/commons-cli-1.3.1.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
