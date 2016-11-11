@@ -9,7 +9,6 @@ import org.apache.commons.cli.ParseException;
 
 public class JCFConfig {
 
-	static private JCFConfig SINGLETON = null;
 	static final public Options OPTIONS = new Options();
 	static {
 		OPTIONS.addOption(Option.builder("i").longOpt("input").required(true)
@@ -29,18 +28,16 @@ public class JCFConfig {
 				.hasArg(false).desc("no progres output").build());
 	}
 
-	static public boolean initialize(final String[] args) {
+	static public JCFConfig initialize(final String[] args) {
 
-		if (null != SINGLETON) {
-			return false;
-		}
+		JCFConfig config = null;
 
 		try {
 			final CommandLineParser parser = new DefaultParser();
 			final CommandLine commandLine = parser.parse(OPTIONS, args);
-			SINGLETON = new JCFConfig(commandLine);
+			config = new JCFConfig(commandLine);
 
-			if (SINGLETON.isVERBOSE() && SINGLETON.isQUIET()) {
+			if (config.isVERBOSE() && config.isQUIET()) {
 				System.err
 						.println("\"-v\" (\"--verbose\") and \"-q\" (\"--quiet\") can not be used together.");
 				System.exit(0);
@@ -51,17 +48,7 @@ public class JCFConfig {
 			System.exit(0);
 		}
 
-		return true;
-	}
-
-	static public JCFConfig getInstance() {
-
-		if (null == SINGLETON) {
-			System.err.println("Config is not initialized.");
-			System.exit(0);
-		}
-
-		return SINGLETON;
+		return config;
 	}
 
 	private final CommandLine commandLine;
