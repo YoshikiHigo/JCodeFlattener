@@ -42,24 +42,31 @@ public class JCodeFlattener {
 			try {
 				final String text = FileUtils.readFileToString(inputFile,
 						Charset.defaultCharset());
-				final Document document = new Document(text);
 
-				final ASTParser parser = ASTParser.newParser(AST.JLS8);
-				parser.setSource(document.get().toCharArray());
-				parser.setKind(ASTParser.K_COMPILATION_UNIT);
+				if (input.endsWith(".java")) {
+					final Document document = new Document(text);
 
-				final CompilationUnit unit = (CompilationUnit) parser.createAST(null);
-				final AST ast = unit.getAST();
-				final ASTRewrite rewriter = ASTRewrite.create(ast);
-				unit.recordModifications();
+					final ASTParser parser = ASTParser.newParser(AST.JLS8);
+					parser.setSource(document.get().toCharArray());
+					parser.setKind(ASTParser.K_COMPILATION_UNIT);
 
-				final JCFASTVisitor visitor = new JCFASTVisitor(ast, rewriter);
-				unit.accept(visitor);
+					final CompilationUnit unit = (CompilationUnit) parser
+							.createAST(null);
+					final AST ast = unit.getAST();
+					final ASTRewrite rewriter = ASTRewrite.create(ast);
+					unit.recordModifications();
 
-				final TextEdit edit = rewriter.rewriteAST(document, null);
-				edit.apply(document);
-				FileUtils.write(outputFile, document.get(),
-						Charset.defaultCharset());
+					final JCFASTVisitor visitor = new JCFASTVisitor(ast,
+							rewriter);
+					unit.accept(visitor);
+
+					final TextEdit edit = rewriter.rewriteAST(document, null);
+					edit.apply(document);
+					FileUtils.write(outputFile, document.get(),
+							Charset.defaultCharset());
+				} else {
+					FileUtils.write(outputFile, text, Charset.defaultCharset());
+				}
 
 			} catch (final IOException | BadLocationException e) {
 				e.printStackTrace();

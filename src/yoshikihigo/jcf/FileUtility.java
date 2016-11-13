@@ -68,7 +68,7 @@ public class FileUtility {
 			}
 		}
 
-		else if (file.isFile() && file.getName().endsWith(".java")) {
+		else if (file.isFile()) {
 			files.add(file);
 		}
 
