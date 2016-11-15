@@ -42,37 +42,46 @@ public class JCodeFlattener {
 		if (inputFile.isFile()) {
 
 			try {
-				final String text = FileUtils.readFileToString(inputFile,
+
+				String text = FileUtils.readFileToString(inputFile,
 						Charset.defaultCharset());
+				int pseudVariableID = 0;
 
 				if (input.endsWith(".java")) {
-					final Document document = new Document(text);
+					while (true) {
+						final Document document = new Document(text);
 
-					final ASTParser parser = ASTParser.newParser(AST.JLS8);
-					parser.setSource(document.get().toCharArray());
-					parser.setKind(ASTParser.K_COMPILATION_UNIT);
+						final ASTParser parser = ASTParser.newParser(AST.JLS8);
+						parser.setSource(document.get().toCharArray());
+						parser.setKind(ASTParser.K_COMPILATION_UNIT);
 
-					final Map<String, String> options = JavaCore.getOptions();
-					JavaCore.setComplianceOptions(JavaCore.VERSION_1_8, options);
-					parser.setCompilerOptions(options);
+						final Map<String, String> options = JavaCore
+								.getOptions();
+						JavaCore.setComplianceOptions(JavaCore.VERSION_1_8,
+								options);
+						parser.setCompilerOptions(options);
 
-					final CompilationUnit unit = (CompilationUnit) parser
-							.createAST(null);
-					final AST ast = unit.getAST();
-					final ASTRewrite rewriter = ASTRewrite.create(ast);
-					unit.recordModifications();
+						final CompilationUnit unit = (CompilationUnit) parser
+								.createAST(null);
+						final AST ast = unit.getAST();
+						final ASTRewrite rewriter = ASTRewrite.create(ast);
+						unit.recordModifications();
 
-					final JCFASTVisitor visitor = new JCFASTVisitor(ast,
-							rewriter);
-					unit.accept(visitor);
+						final JCFASTVisitor visitor = new JCFASTVisitor(ast,
+								pseudVariableID++, rewriter);
+						unit.accept(visitor);
 
-					final TextEdit edit = rewriter.rewriteAST(document, null);
-					edit.apply(document);
-					FileUtils.write(outputFile, document.get(),
-							Charset.defaultCharset());
-				} else {
-					FileUtils.write(outputFile, text, Charset.defaultCharset());
+						if (!visitor.isChanged()) {
+							break;
+						}
+
+						final TextEdit edit = rewriter.rewriteAST(document,
+								null);
+						edit.apply(document);
+						text = document.get();
+					}
 				}
+				FileUtils.write(outputFile, text, Charset.defaultCharset());
 
 			} catch (final IOException | BadLocationException e) {
 				e.printStackTrace();

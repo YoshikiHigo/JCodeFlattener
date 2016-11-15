@@ -1,7 +1,6 @@
 package yoshikihigo.jcf;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -105,14 +104,17 @@ import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 
 public class JCFASTVisitor extends ASTVisitor {
 
-	final private AtomicInteger generatedID;
+	final private int pseudVariableID;
 	final private AST ast;
 	final private ASTRewrite astRewriter;
+	private boolean changed;
 
-	public JCFASTVisitor(final AST ast, final ASTRewrite astRewriter) {
-		this.generatedID = new AtomicInteger(0);
+	public JCFASTVisitor(final AST ast, final int pseudVariableID,
+			ASTRewrite astRewriter) {
 		this.ast = ast;
+		this.pseudVariableID = pseudVariableID;
 		this.astRewriter = astRewriter;
+		this.changed = false;
 	}
 
 	@Override
@@ -426,6 +428,7 @@ public class JCFASTVisitor extends ASTVisitor {
 		@SuppressWarnings("unchecked")
 		final List<Expression> arguments = node.arguments();
 		arguments.stream().forEach(e -> this.dissolveExpression(e));
+
 		super.endVisit(node);
 	}
 
@@ -675,7 +678,6 @@ public class JCFASTVisitor extends ASTVisitor {
 
 	@Override
 	public void endVisit(final VariableDeclarationFragment node) {
-		this.dissolveExpression(node.getInitializer());
 		super.endVisit(node);
 	}
 
@@ -726,6 +728,10 @@ public class JCFASTVisitor extends ASTVisitor {
 
 	private Expression dissolveExpression(final Expression expression) {
 
+		if (this.changed) {
+			return null;
+		}
+
 		if (null == expression) {
 			return null;
 		}
@@ -735,7 +741,9 @@ public class JCFASTVisitor extends ASTVisitor {
 				|| (expression instanceof NumberLiteral)
 				|| (expression instanceof StringLiteral)
 				|| (expression instanceof BooleanLiteral)
-				|| (expression instanceof CharacterLiteral)) {
+				|| (expression instanceof CharacterLiteral)
+				|| (expression instanceof ThisExpression)
+				|| (expression instanceof VariableDeclarationExpression)) {
 			return null;
 		}
 
@@ -747,7 +755,7 @@ public class JCFASTVisitor extends ASTVisitor {
 		}
 
 		// generate a new artificial variable name
-		final String newIdentifier = "$" + this.generatedID.getAndIncrement();
+		final String newIdentifier = "$" + this.pseudVariableID;
 
 		// make a new variable declaration statement
 		final VariableDeclarationFragment fragment = this.ast
@@ -760,14 +768,55 @@ public class JCFASTVisitor extends ASTVisitor {
 				.newVariableDeclarationStatement(fragment);
 		newStatement.setType(this.ast.newSimpleType(this.ast
 				.newSimpleName("Object")));
-		final ListRewrite listRewriter = this.astRewriter.getListRewrite(
-				parentBlock, Block.STATEMENTS_PROPERTY);
-		listRewriter.insertBefore(newStatement, parentStatement, null);
+		final ListRewrite variableDeclarationInserter = this.astRewriter
+				.getListRewrite(parentBlock, Block.STATEMENTS_PROPERTY);
+		variableDeclarationInserter.insertBefore(newStatement, parentStatement,
+				null);
 
-		// dissolve the existing complex expression
+		// processing for while- and for-statement
+		this.doForLoopBlock(parentStatement, expression, newIdentifier);
+
+		// replace the existing expression with a new variable reference
 		final Expression newSimpleName = this.ast.newSimpleName(newIdentifier);
 		this.astRewriter.replace(expression, newSimpleName, null);
+		this.changed = true;
 
 		return newSimpleName;
+	}
+
+	private void doForLoopBlock(final Statement loopStatement,
+			final Expression expression, final String identifier) {
+
+		Statement innerStatement = null;
+		if (loopStatement instanceof WhileStatement) {
+			innerStatement = ((WhileStatement) loopStatement).getBody();
+		} else if (loopStatement instanceof ForStatement) {
+			innerStatement = ((ForStatement) loopStatement).getBody();
+		} else {
+			return;
+		}
+
+		final Assignment a = this.ast.newAssignment();
+		a.setLeftHandSide(this.ast.newSimpleName(identifier));
+		final Expression rightExpression = (Expression) ASTNode.copySubtree(
+				this.ast, expression);
+		a.setRightHandSide(rightExpression);
+		final ExpressionStatement s = this.ast.newExpressionStatement(a);
+
+		if (innerStatement instanceof Block) {
+			final ListRewrite inserter = this.astRewriter.getListRewrite(
+					(Block) innerStatement, Block.STATEMENTS_PROPERTY);
+			inserter.insertLast(s, null);
+		}
+
+		final Block block = this.ast.newBlock();
+		final ListRewrite inserter = this.astRewriter.getListRewrite(block,
+				Block.STATEMENTS_PROPERTY);
+		inserter.insertFirst(innerStatement, null);
+		inserter.insertLast(s, null);
+	}
+
+	public boolean isChanged() {
+		return this.changed;
 	}
 }
