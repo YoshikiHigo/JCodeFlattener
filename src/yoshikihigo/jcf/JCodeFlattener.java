@@ -3,9 +3,11 @@ package yoshikihigo.jcf;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Map;
 import java.util.SortedSet;
 
 import org.apache.commons.io.FileUtils;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -49,6 +51,10 @@ public class JCodeFlattener {
 					final ASTParser parser = ASTParser.newParser(AST.JLS8);
 					parser.setSource(document.get().toCharArray());
 					parser.setKind(ASTParser.K_COMPILATION_UNIT);
+
+					final Map<String, String> options = JavaCore.getOptions();
+					JavaCore.setComplianceOptions(JavaCore.VERSION_1_8, options);
+					parser.setCompilerOptions(options);
 
 					final CompilationUnit unit = (CompilationUnit) parser
 							.createAST(null);
