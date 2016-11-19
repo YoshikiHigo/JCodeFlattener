@@ -144,12 +144,14 @@ public class JCFASTVisitor extends ASTVisitor {
 
 	@Override
 	public void endVisit(final ArrayCreation node) {
-		// TODO Auto-generated method stub
+		@SuppressWarnings("unchecked")
+		final List<Expression> expressions = node.dimensions();
+		expressions.stream().forEach(e -> this.dissolveExpression(e));
 		super.endVisit(node);
 	}
 
 	@Override
-	public void endVisit(ArrayInitializer node) {
+	public void endVisit(final ArrayInitializer node) {
 		@SuppressWarnings("unchecked")
 		final List<Expression> expressions = node.expressions();
 		expressions.stream().forEach(e -> this.dissolveExpression(e));
@@ -217,8 +219,11 @@ public class JCFASTVisitor extends ASTVisitor {
 	}
 
 	@Override
-	public void endVisit(ClassInstanceCreation node) {
-		// TODO Auto-generated method stub
+	public void endVisit(final ClassInstanceCreation node) {
+		@SuppressWarnings("unchecked")
+		final List<Expression> arguments = node.arguments();
+		arguments.stream().forEach(e -> this.dissolveExpression(e));
+		this.dissolveExpression(node.getExpression());
 		super.endVisit(node);
 	}
 
@@ -257,8 +262,8 @@ public class JCFASTVisitor extends ASTVisitor {
 	}
 
 	@Override
-	public void endVisit(DoStatement node) {
-		// TODO Auto-generated method stub
+	public void endVisit(final DoStatement node) {
+		this.dissolveExpression(node.getExpression());
 		super.endVisit(node);
 	}
 
@@ -287,14 +292,13 @@ public class JCFASTVisitor extends ASTVisitor {
 	}
 
 	@Override
-	public void endVisit(ExpressionMethodReference node) {
-		// TODO Auto-generated method stub
+	public void endVisit(final ExpressionMethodReference node) {
+		this.dissolveExpression(node.getExpression());
 		super.endVisit(node);
 	}
 
 	@Override
-	public void endVisit(ExpressionStatement node) {
-		// TODO Auto-generated method stub
+	public void endVisit(final ExpressionStatement node) {
 		super.endVisit(node);
 	}
 
@@ -319,9 +323,9 @@ public class JCFASTVisitor extends ASTVisitor {
 	@Override
 	public void endVisit(final ForStatement node) {
 
-		@SuppressWarnings("unchecked")
-		final List<Expression> initializers = node.initializers();
-		initializers.stream().forEach(i -> this.dissolveExpression(i));
+		// TODO for expression and initializers
+
+		this.dissolveExpression(node.getExpression());
 
 		// TODO for expression and updaters
 
@@ -565,7 +569,9 @@ public class JCFASTVisitor extends ASTVisitor {
 
 	@Override
 	public void endVisit(SuperMethodInvocation node) {
-		// TODO Auto-generated method stub
+		@SuppressWarnings("unchecked")
+		final List<Expression> arguments = node.arguments();
+		arguments.stream().forEach(a -> this.dissolveExpression(a));
 		super.endVisit(node);
 	}
 
@@ -612,8 +618,8 @@ public class JCFASTVisitor extends ASTVisitor {
 	}
 
 	@Override
-	public void endVisit(ThrowStatement node) {
-		// TODO Auto-generated method stub
+	public void endVisit(final ThrowStatement node) {
+		this.dissolveExpression(node.getExpression());
 		super.endVisit(node);
 	}
 
@@ -682,8 +688,8 @@ public class JCFASTVisitor extends ASTVisitor {
 	}
 
 	@Override
-	public void endVisit(WhileStatement node) {
-		// TODO Auto-generated method stub
+	public void endVisit(final WhileStatement node) {
+		this.dissolveExpression(node.getExpression());
 		super.endVisit(node);
 	}
 
@@ -718,8 +724,8 @@ public class JCFASTVisitor extends ASTVisitor {
 			if (null == parent) {
 				break;
 			}
-			if ((parent instanceof Statement)
-					&& (parent.getParent() instanceof Block)) {
+			if (parent instanceof Statement
+					&& parent.getParent() instanceof Block) {
 				break;
 			}
 		}
@@ -747,6 +753,13 @@ public class JCFASTVisitor extends ASTVisitor {
 			return null;
 		}
 
+		if (expression instanceof PrefixExpression) {
+			final PrefixExpression prefixExpression = (PrefixExpression) expression;
+			if (prefixExpression.getOperand() instanceof NumberLiteral) {
+				return null;
+			}
+		}
+
 		final Block parentBlock = getParentBlock(expression);
 		final Statement parentStatement = getParentStatement(expression);
 
@@ -755,7 +768,7 @@ public class JCFASTVisitor extends ASTVisitor {
 		}
 
 		// generate a new artificial variable name
-		final String newIdentifier = "$" + this.pseudVariableID;
+		final String newIdentifier = "_GENARATED_$" + this.pseudVariableID;
 
 		// make a new variable declaration statement
 		final VariableDeclarationFragment fragment = this.ast
@@ -792,6 +805,10 @@ public class JCFASTVisitor extends ASTVisitor {
 			innerStatement = ((WhileStatement) loopStatement).getBody();
 		} else if (loopStatement instanceof ForStatement) {
 			innerStatement = ((ForStatement) loopStatement).getBody();
+		} else if (loopStatement instanceof LabeledStatement) {
+			this.doForLoopBlock(((LabeledStatement) loopStatement).getBody(),
+					expression, identifier);
+			return;
 		} else {
 			return;
 		}
