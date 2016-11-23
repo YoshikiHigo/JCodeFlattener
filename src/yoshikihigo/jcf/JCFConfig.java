@@ -26,6 +26,10 @@ public class JCFConfig {
 
 		OPTIONS.addOption(Option.builder("q").longOpt("quiet").required(false)
 				.hasArg(false).desc("no progres output").build());
+
+		OPTIONS.addOption(Option.builder("a").longOpt("aggressive")
+				.required(false).hasArg(false).desc("aggresively flattening")
+				.build());
 	}
 
 	static public JCFConfig initialize(final String[] args) {
@@ -87,5 +91,9 @@ public class JCFConfig {
 
 	public boolean isQUIET() {
 		return this.commandLine.hasOption("q");
+	}
+
+	public boolean isAGGRESIVE() {
+		return this.commandLine.hasOption("a");
 	}
 }

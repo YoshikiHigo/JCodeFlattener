@@ -56,14 +56,16 @@ public class JCFASTVisitor extends ASTVisitor {
 	final private int pseudVariableID;
 	final private AST ast;
 	final private ASTRewrite astRewriter;
+	final private boolean aggresive;
 	private boolean changed;
 	private CONTEXT context;
 
 	public JCFASTVisitor(final AST ast, final int pseudVariableID,
-			ASTRewrite astRewriter) {
+			final ASTRewrite astRewriter, final boolean aggresive) {
 		this.ast = ast;
 		this.pseudVariableID = pseudVariableID;
 		this.astRewriter = astRewriter;
+		this.aggresive = aggresive;
 		this.changed = false;
 		this.context = CONTEXT.NORMAL;
 	}
@@ -115,8 +117,10 @@ public class JCFASTVisitor extends ASTVisitor {
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
 			e.accept(this);
-			// do not call dissolveExpression(e)!
-			});
+			if (this.aggresive) {
+				this.dissolveExpression(e);
+			}
+		});
 
 		Optional.ofNullable(node.getMessage()).ifPresent(m -> {
 			m.accept(this);
@@ -160,8 +164,10 @@ public class JCFASTVisitor extends ASTVisitor {
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
 			e.accept(this);
-			// do not call dissolveExpression(e)!
-			});
+			if (this.aggresive) {
+				this.dissolveExpression(e);
+			}
+		});
 
 		Optional.ofNullable(node.getThenExpression()).ifPresent(e -> {
 			e.accept(this);
@@ -196,8 +202,10 @@ public class JCFASTVisitor extends ASTVisitor {
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
 			e.accept(this);
-			// do not call dissolveExpresion(e)!
-			});
+			if (this.aggresive) {
+				this.dissolveExpression(e);
+			}
+		});
 
 		return false;
 	}
@@ -249,8 +257,10 @@ public class JCFASTVisitor extends ASTVisitor {
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
 			e.accept(this);
-			// do not call dissolveExpression(e)!
-			});
+			if (this.aggresive) {
+				this.dissolveExpression(e);
+			}
+		});
 
 		this.context = CONTEXT.NORMAL;
 
@@ -264,8 +274,10 @@ public class JCFASTVisitor extends ASTVisitor {
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
 			e.accept(this);
-			// do not call dissolveExpression(e)!
-			});
+			if (this.aggresive) {
+				this.dissolveExpression(e);
+			}
+		});
 
 		Optional.ofNullable(node.getThenStatement()).ifPresent(
 				e -> e.accept(this));
@@ -400,8 +412,10 @@ public class JCFASTVisitor extends ASTVisitor {
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
 			e.accept(this);
-			// do not call dissolveExpression(e)!
-			});
+			if (this.aggresive) {
+				this.dissolveExpression(e);
+			}
+		});
 
 		@SuppressWarnings("unchecked")
 		final List<Statement> statements = node.statements();
@@ -415,7 +429,9 @@ public class JCFASTVisitor extends ASTVisitor {
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
 			e.accept(this);
-			// do not call dissolvExpression(e)!
+			if (this.aggresive) {
+				this.dissolveExpression(e);
+			}
 		});
 
 		node.getBody().accept(this);
@@ -440,8 +456,10 @@ public class JCFASTVisitor extends ASTVisitor {
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
 			e.accept(this);
-			// do not call dissolveExpression(e)!
-			});
+			if (this.aggresive) {
+				this.dissolveExpression(e);
+			}
+		});
 
 		this.context = CONTEXT.NORMAL;
 

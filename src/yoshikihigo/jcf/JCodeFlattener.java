@@ -36,6 +36,7 @@ public class JCodeFlattener {
 			System.exit(0);
 		}
 		final String output = config.getOUTPUT();
+		final boolean aggresive = config.isAGGRESIVE();
 
 		final File inputFile = new File(input);
 		final File outputFile = new File(output);
@@ -68,7 +69,7 @@ public class JCodeFlattener {
 						unit.recordModifications();
 
 						final JCFASTVisitor visitor = new JCFASTVisitor(ast,
-								pseudVariableID++, rewriter);
+								pseudVariableID++, rewriter, aggresive);
 						unit.accept(visitor);
 
 						if (!visitor.isChanged()) {
