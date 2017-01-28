@@ -24,6 +24,8 @@ import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ExpressionMethodReference;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.ForStatement;
+import org.eclipse.jdt.core.dom.IPackageBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IfStatement;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.InstanceofExpression;
@@ -31,9 +33,11 @@ import org.eclipse.jdt.core.dom.LabeledStatement;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.NumberLiteral;
+import org.eclipse.jdt.core.dom.ParameterizedType;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.PostfixExpression;
 import org.eclipse.jdt.core.dom.PrefixExpression;
+import org.eclipse.jdt.core.dom.PrimitiveType;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
@@ -44,6 +48,7 @@ import org.eclipse.jdt.core.dom.SwitchStatement;
 import org.eclipse.jdt.core.dom.SynchronizedStatement;
 import org.eclipse.jdt.core.dom.ThisExpression;
 import org.eclipse.jdt.core.dom.ThrowStatement;
+import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
@@ -60,8 +65,8 @@ public class JCFASTVisitor extends ASTVisitor {
 	private boolean changed;
 	private CONTEXT context;
 
-	public JCFASTVisitor(final AST ast, final int pseudVariableID,
-			final ASTRewrite astRewriter, final boolean aggresive) {
+	public JCFASTVisitor(final AST ast, final int pseudVariableID, final ASTRewrite astRewriter,
+			final boolean aggresive) {
 		this.ast = ast;
 		this.pseudVariableID = pseudVariableID;
 		this.astRewriter = astRewriter;
@@ -242,7 +247,7 @@ public class JCFASTVisitor extends ASTVisitor {
 		initializers.stream().forEach(e -> {
 			e.accept(this);
 			// do not call dissolveExpression(e)!
-			});
+		});
 
 		this.context = CONTEXT.LOOPUPDATER;
 
@@ -251,7 +256,7 @@ public class JCFASTVisitor extends ASTVisitor {
 		updaters.stream().forEach(e -> {
 			e.accept(this);
 			// do not call dissolveExpression(e)!
-			});
+		});
 
 		this.context = CONTEXT.LOOPCONDITION;
 
@@ -279,10 +284,8 @@ public class JCFASTVisitor extends ASTVisitor {
 			}
 		});
 
-		Optional.ofNullable(node.getThenStatement()).ifPresent(
-				e -> e.accept(this));
-		Optional.ofNullable(node.getElseStatement()).ifPresent(
-				e -> e.accept(this));
+		Optional.ofNullable(node.getThenStatement()).ifPresent(e -> e.accept(this));
+		Optional.ofNullable(node.getElseStatement()).ifPresent(e -> e.accept(this));
 
 		return false;
 	}
@@ -493,8 +496,7 @@ public class JCFASTVisitor extends ASTVisitor {
 			if (null == parent) {
 				break;
 			}
-			if (parent instanceof Statement
-					&& parent.getParent() instanceof Block) {
+			if (parent instanceof Statement && parent.getParent() instanceof Block) {
 				break;
 			}
 		}
@@ -511,14 +513,10 @@ public class JCFASTVisitor extends ASTVisitor {
 			return null;
 		}
 
-		if ((expression instanceof SimpleName)
-				|| (expression instanceof NullLiteral)
-				|| (expression instanceof NumberLiteral)
-				|| (expression instanceof StringLiteral)
-				|| (expression instanceof BooleanLiteral)
-				|| (expression instanceof CharacterLiteral)
-				|| (expression instanceof ThisExpression)
-				|| (expression instanceof VariableDeclarationExpression)) {
+		if ((expression instanceof SimpleName) || (expression instanceof NullLiteral)
+				|| (expression instanceof NumberLiteral) || (expression instanceof StringLiteral)
+				|| (expression instanceof BooleanLiteral) || (expression instanceof CharacterLiteral)
+				|| (expression instanceof ThisExpression) || (expression instanceof VariableDeclarationExpression)) {
 			return null;
 		}
 
@@ -540,27 +538,24 @@ public class JCFASTVisitor extends ASTVisitor {
 		final String newIdentifier = "$" + this.pseudVariableID;
 
 		// make a new variable declaration statement
-		if ((CONTEXT.NORMAL == this.context)
-				|| (CONTEXT.LOOPCONDITION == this.context)) {
-			final VariableDeclarationFragment fragment = this.ast
-					.newVariableDeclarationFragment();
+		if ((CONTEXT.NORMAL == this.context) || (CONTEXT.LOOPCONDITION == this.context)) {
+
+			final ITypeBinding binding = expression.resolveTypeBinding();
+			final Type resolvedType = this.resolveBinding(binding);
+
+			final VariableDeclarationFragment fragment = this.ast.newVariableDeclarationFragment();
 			fragment.setName(this.ast.newSimpleName(newIdentifier));
-			final Expression newLeftExpression = (Expression) ASTNode
-					.copySubtree(this.ast, expression);
+			final Expression newLeftExpression = (Expression) ASTNode.copySubtree(this.ast, expression);
 			fragment.setInitializer(newLeftExpression);
-			final VariableDeclarationStatement newStatement = this.ast
-					.newVariableDeclarationStatement(fragment);
-			newStatement.setType(this.ast.newSimpleType(this.ast
-					.newSimpleName("Object")));
-			final ListRewrite variableDeclarationInserter = this.astRewriter
-					.getListRewrite(parentBlock, Block.STATEMENTS_PROPERTY);
-			variableDeclarationInserter.insertBefore(newStatement,
-					parentStatement, null);
+			final VariableDeclarationStatement newStatement = this.ast.newVariableDeclarationStatement(fragment);
+			newStatement.setType(resolvedType);
+			final ListRewrite variableDeclarationInserter = this.astRewriter.getListRewrite(parentBlock,
+					Block.STATEMENTS_PROPERTY);
+			variableDeclarationInserter.insertBefore(newStatement, parentStatement, null);
 		}
 
 		// processing for while- and for-statement
-		if ((CONTEXT.LOOPCONDITION == this.context)
-				|| (CONTEXT.LOOPUPDATER == this.context)) {
+		if ((CONTEXT.LOOPCONDITION == this.context) || (CONTEXT.LOOPUPDATER == this.context)) {
 			this.doForLoopBlock(parentStatement, expression, newIdentifier);
 		}
 
@@ -572,8 +567,7 @@ public class JCFASTVisitor extends ASTVisitor {
 		return newSimpleName;
 	}
 
-	private void doForLoopBlock(final Statement loopStatement,
-			final Expression expression, final String identifier) {
+	private void doForLoopBlock(final Statement loopStatement, final Expression expression, final String identifier) {
 
 		Statement innerStatement = null;
 		if (loopStatement instanceof WhileStatement) {
@@ -581,8 +575,7 @@ public class JCFASTVisitor extends ASTVisitor {
 		} else if (loopStatement instanceof ForStatement) {
 			innerStatement = ((ForStatement) loopStatement).getBody();
 		} else if (loopStatement instanceof LabeledStatement) {
-			this.doForLoopBlock(((LabeledStatement) loopStatement).getBody(),
-					expression, identifier);
+			this.doForLoopBlock(((LabeledStatement) loopStatement).getBody(), expression, identifier);
 			return;
 		} else {
 			return;
@@ -590,22 +583,95 @@ public class JCFASTVisitor extends ASTVisitor {
 
 		final Assignment a = this.ast.newAssignment();
 		a.setLeftHandSide(this.ast.newSimpleName(identifier));
-		final Expression rightExpression = (Expression) ASTNode.copySubtree(
-				this.ast, expression);
+		final Expression rightExpression = (Expression) ASTNode.copySubtree(this.ast, expression);
 		a.setRightHandSide(rightExpression);
 		final ExpressionStatement s = this.ast.newExpressionStatement(a);
 
 		if (innerStatement instanceof Block) {
-			final ListRewrite inserter = this.astRewriter.getListRewrite(
-					(Block) innerStatement, Block.STATEMENTS_PROPERTY);
+			final ListRewrite inserter = this.astRewriter.getListRewrite((Block) innerStatement,
+					Block.STATEMENTS_PROPERTY);
 			inserter.insertLast(s, null);
 		}
 
 		final Block block = this.ast.newBlock();
-		final ListRewrite inserter = this.astRewriter.getListRewrite(block,
-				Block.STATEMENTS_PROPERTY);
+		final ListRewrite inserter = this.astRewriter.getListRewrite(block, Block.STATEMENTS_PROPERTY);
 		inserter.insertFirst(innerStatement, null);
 		inserter.insertLast(s, null);
+	}
+
+	private Type resolveBinding(final ITypeBinding binding) {
+
+		if (null == binding) {
+			final Type java = this.ast.newSimpleType(this.ast.newSimpleName("java"));
+			final Type lang = this.ast.newQualifiedType(java, this.ast.newSimpleName("lang"));
+			final Type object = this.ast.newQualifiedType(lang, this.ast.newSimpleName("Object"));
+			return object;
+		}
+
+		else if (binding.isArray()) {
+			final int dimension = binding.getDimensions();
+			final ITypeBinding elementBinding = binding.getElementType();
+			final Type elementType = this.resolveBinding(elementBinding);
+			return this.ast.newArrayType(elementType, dimension);
+		}
+
+		else {
+
+			final IPackageBinding packageName = binding.getPackage();
+			final String typeName = binding.getErasure().getName();
+			Type type = null;
+			if (null != packageName) {
+				type = this.ast.newNameQualifiedType(this.ast.newName(packageName.getName()),
+						this.ast.newSimpleName(typeName));
+			}
+
+			else {
+				switch (typeName) {
+				case "boolean":
+					type = this.ast.newPrimitiveType(PrimitiveType.BOOLEAN);
+					break;
+				case "byte":
+					type = this.ast.newPrimitiveType(PrimitiveType.BYTE);
+					break;
+				case "char":
+					type = this.ast.newPrimitiveType(PrimitiveType.CHAR);
+					break;
+				case "double":
+					type = this.ast.newPrimitiveType(PrimitiveType.DOUBLE);
+					break;
+				case "float":
+					type = this.ast.newPrimitiveType(PrimitiveType.FLOAT);
+					break;
+				case "int":
+					type = this.ast.newPrimitiveType(PrimitiveType.INT);
+					break;
+				case "long":
+					type = this.ast.newPrimitiveType(PrimitiveType.LONG);
+					break;
+				case "short":
+					type = this.ast.newPrimitiveType(PrimitiveType.SHORT);
+					break;
+				default:
+					type = this.ast.newSimpleType(this.ast.newSimpleName(typeName));
+					break;
+				}
+			}
+
+			if (!binding.isParameterizedType()) {
+				return type;
+			}
+
+			else {
+				final ParameterizedType pType = this.ast.newParameterizedType(type);
+				final ListRewrite typeArgumentsRewriter = this.astRewriter.getListRewrite(pType,
+						ParameterizedType.TYPE_ARGUMENTS_PROPERTY);
+				for (final ITypeBinding typeArgumentBinding : binding.getTypeArguments()) {
+					final Type typeArgument = this.resolveBinding(typeArgumentBinding);
+					typeArgumentsRewriter.insertLast(typeArgument, null);
+				}
+				return pType;
+			}
+		}
 	}
 
 	public boolean isChanged() {

@@ -11,25 +11,26 @@ public class JCFConfig {
 
 	static final public Options OPTIONS = new Options();
 	static {
-		OPTIONS.addOption(Option.builder("i").longOpt("input").required(true)
-				.hasArg(true).argName("dir").desc("input directory").build());
+		OPTIONS.addOption(Option.builder("i").longOpt("input").required(true).hasArg(true).argName("dir")
+				.desc("input directory").build());
 
-		OPTIONS.addOption(Option.builder("o").longOpt("output").required(true)
-				.hasArg(true).argName("dir").desc("output directory").build());
+		OPTIONS.addOption(Option.builder("o").longOpt("output").required(true).hasArg(true).argName("dir")
+				.desc("output directory").build());
 
-		OPTIONS.addOption(Option.builder("e").longOpt("encoding")
-				.required(false).argName("code")
+		OPTIONS.addOption(Option.builder("l").longOpt("library").required(false).hasArg(true).argName("paths")
+				.desc("paths for jar files").build());
+
+		OPTIONS.addOption(Option.builder("e").longOpt("encoding").required(false).argName("code")
 				.desc("encoding of target files").build());
 
-		OPTIONS.addOption(Option.builder("v").longOpt("verbose")
-				.required(false).hasArg(false).desc("verbose output").build());
+		OPTIONS.addOption(
+				Option.builder("v").longOpt("verbose").required(false).hasArg(false).desc("verbose output").build());
 
-		OPTIONS.addOption(Option.builder("q").longOpt("quiet").required(false)
-				.hasArg(false).desc("no progres output").build());
+		OPTIONS.addOption(
+				Option.builder("q").longOpt("quiet").required(false).hasArg(false).desc("no progres output").build());
 
-		OPTIONS.addOption(Option.builder("a").longOpt("aggressive")
-				.required(false).hasArg(false).desc("aggresively flattening")
-				.build());
+		OPTIONS.addOption(Option.builder("a").longOpt("aggressive").required(false).hasArg(false)
+				.desc("aggresively flattening").build());
 	}
 
 	static public JCFConfig initialize(final String[] args) {
@@ -42,8 +43,7 @@ public class JCFConfig {
 			config = new JCFConfig(commandLine);
 
 			if (config.isVERBOSE() && config.isQUIET()) {
-				System.err
-						.println("\"-v\" (\"--verbose\") and \"-q\" (\"--quiet\") can not be used together.");
+				System.err.println("\"-v\" (\"--verbose\") and \"-q\" (\"--quiet\") can not be used together.");
 				System.exit(0);
 			}
 
@@ -75,6 +75,14 @@ public class JCFConfig {
 
 	public String getOUTPUT() {
 		return this.hasOUTPUT() ? this.commandLine.getOptionValue("o") : "";
+	}
+
+	public boolean hasLIBRARY() {
+		return this.commandLine.hasOption("l");
+	}
+
+	public String getLIBRARY() {
+		return this.hasLIBRARY() ? this.commandLine.getOptionValue("l") : "";
 	}
 
 	public boolean hasENCODING() {
