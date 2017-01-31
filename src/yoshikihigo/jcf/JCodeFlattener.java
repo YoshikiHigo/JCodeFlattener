@@ -12,6 +12,7 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
+import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
@@ -95,7 +96,8 @@ public class JCodeFlattener {
 							break;
 						}
 
-						final TextEdit edit = rewriter.rewriteAST(document, null);
+						final TextEdit edit = rewriter.rewriteAST(document,
+								DefaultCodeFormatterConstants.getEclipseDefaultSettings());
 						edit.apply(document);
 						text = document.get();
 					}

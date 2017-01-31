@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
 import org.eclipse.jdt.core.dom.ArrayAccess;
 import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
@@ -470,7 +471,7 @@ public class JCFASTVisitor extends ASTVisitor {
 
 		return false;
 	}
-
+	
 	private static Block getParentBlock(final ASTNode node) {
 		ASTNode parent = node;
 		boolean statementPassed = false;
