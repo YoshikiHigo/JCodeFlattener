@@ -3,8 +3,14 @@ package yoshikihigo.jcf;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.JavaCore;
@@ -115,33 +121,25 @@ public class JCodeFlattener {
 			final SortedSet<File> files = FileUtility.getFiles(inputFile);
 			sourceDirectories = files.stream().map(f -> f.getParentFile().getAbsolutePath()).toArray(String[]::new);
 
+			final int threads = config.getTHREADS();
+			final ExecutorService threadPool = Executors.newFixedThreadPool(threads);
+			final List<Future<?>> futures = new ArrayList<>();
+
 			for (final File file : files) {
+				final Future<?> future = threadPool
+						.submit(new MyThread(args, file, index++, files.size(), input, output, config.isVERBOSE()));
+				futures.add(future);
+			}
 
-				if (config.isVERBOSE()) {
-					final StringBuilder text = new StringBuilder();
-					text.append(" [");
-					text.append(Integer.toString(index++ + 1));
-					text.append("/");
-					text.append(Integer.toString(files.size()));
-					text.append("] ");
-					text.append(file.getAbsolutePath());
-					System.err.println(text.toString());
+			try {
+				for (final Future<?> future : futures) {
+					future.get();
 				}
-
-				final String outputPath = file.getAbsolutePath().replace(input, output);
-
-				final String[] newArgs = new String[args.length];
-				for (int i = 0; i < args.length; i++) {
-					if (args[i].equals(input)) {
-						newArgs[i] = file.getAbsolutePath();
-					} else if (args[i].equals(output)) {
-						newArgs[i] = outputPath;
-					} else {
-						newArgs[i] = args[i];
-					}
-				}
-
-				main(newArgs);
+			} catch (final ExecutionException | InterruptedException e) {
+				e.printStackTrace();
+				System.exit(0);
+			} finally {
+				threadPool.shutdown();
 			}
 		}
 	}
@@ -155,6 +153,59 @@ public class JCodeFlattener {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			return null;
+		}
+	}
+
+	static class MyThread extends Thread {
+
+		final String[] args;
+		final File file;
+		final int index;
+		final int files;
+		final String input;
+		final String output;
+		final boolean verbose;
+
+		MyThread(final String[] args, final File file, final int index, final int files, final String input,
+				final String output, final boolean verbose) {
+			this.args = args;
+			this.file = file;
+			this.index = index;
+			this.files = files;
+			this.input = input;
+			this.output = output;
+			this.verbose = verbose;
+		}
+
+		@Override
+		public void run() {
+			if (this.verbose) {
+				final StringBuilder text = new StringBuilder();
+				text.append(" [");
+				text.append(Integer.toString(this.index + 1));
+				text.append("/");
+				text.append(Integer.toString(this.files));
+				text.append("] ");
+				text.append(file.getAbsolutePath());
+				text.append(" is being flattened by thread ");
+				text.append(Long.toString(Thread.currentThread().getId()));
+				System.err.println(text.toString());
+			}
+
+			final String outputPath = this.file.getAbsolutePath().replace(this.input, this.output);
+
+			final String[] newArgs = new String[this.args.length];
+			for (int i = 0; i < this.args.length; i++) {
+				if (this.args[i].equals(this.input)) {
+					newArgs[i] = this.file.getAbsolutePath();
+				} else if (args[i].equals(output)) {
+					newArgs[i] = outputPath;
+				} else {
+					newArgs[i] = this.args[i];
+				}
+			}
+
+			main(newArgs);
 		}
 	}
 

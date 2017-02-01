@@ -17,9 +17,8 @@ public class FileUtility {
 
 		final StringBuilder text = new StringBuilder();
 
-		try (final InputStreamReader reader = new InputStreamReader(
-				new FileInputStream(file), null != encoding ? encoding
-						: "JISAutoDetect")) {
+		try (final InputStreamReader reader = new InputStreamReader(new FileInputStream(file),
+				null != encoding ? encoding : "JISAutoDetect")) {
 
 			while (reader.ready()) {
 				final int c = reader.read();
@@ -69,12 +68,13 @@ public class FileUtility {
 		}
 
 		else if (file.isFile()) {
-			files.add(file);
+			if (file.getName().endsWith(".java")) {
+				files.add(file);
+			}
 		}
 
 		else {
-			System.err.println("\"" + file.getAbsolutePath()
-					+ "\" is not a vaild file!");
+			System.err.println("\"" + file.getAbsolutePath() + "\" is not a vaild file!");
 		}
 
 		return files;

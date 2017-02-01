@@ -629,6 +629,9 @@ public class JCFASTVisitor extends ASTVisitor {
 			} else if (binding.isCapture()) {
 				packageName = null;
 				typeName = "Object"; // XXX shouldn't be Object
+			} else if(binding.isWildcardType()){
+				packageName = null;
+				typeName = "Object"; 
 			} else {
 				ITypeBinding abc = binding.getErasure();
 				packageName = binding.getPackage();

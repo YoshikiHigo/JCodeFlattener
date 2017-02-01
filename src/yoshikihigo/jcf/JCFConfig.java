@@ -31,6 +31,9 @@ public class JCFConfig {
 
 		OPTIONS.addOption(Option.builder("a").longOpt("aggressive").required(false).hasArg(false)
 				.desc("aggresively flattening").build());
+
+		OPTIONS.addOption(
+				Option.builder("t").longOpt("threads").required(false).hasArg(true).desc("number of threads").build());
 	}
 
 	static public JCFConfig initialize(final String[] args) {
@@ -103,5 +106,9 @@ public class JCFConfig {
 
 	public boolean isAGGRESIVE() {
 		return this.commandLine.hasOption("a");
+	}
+
+	public int getTHREADS() {
+		return this.commandLine.hasOption("t") ? Integer.valueOf(this.commandLine.getOptionValue("t")) : 1;
 	}
 }
