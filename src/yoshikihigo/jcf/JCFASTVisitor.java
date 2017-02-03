@@ -290,6 +290,7 @@ public class JCFASTVisitor extends ASTVisitor {
 		return false;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public boolean visit(final InfixExpression node) {
 
@@ -301,6 +302,14 @@ public class JCFASTVisitor extends ASTVisitor {
 		Optional.ofNullable(node.getRightOperand()).ifPresent(e -> {
 			e.accept(this);
 			this.dissolveExpression(e);
+		});
+
+		Optional.ofNullable(node.extendedOperands()).ifPresent(e -> {
+			e.stream().forEach(f -> {
+				Expression g = (Expression) f;
+				g.accept(this);
+				this.dissolveExpression(g);
+			});
 		});
 
 		return false;
