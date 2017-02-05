@@ -62,15 +62,17 @@ public class JCFASTVisitor extends ASTVisitor {
 	final private AST ast;
 	final private ASTRewrite astRewriter;
 	final private boolean aggresive;
+	private boolean nameResolving;
 	private boolean changed;
 	private CONTEXT context;
 
 	public JCFASTVisitor(final AST ast, final int pseudVariableID, final ASTRewrite astRewriter,
-			final boolean aggresive) {
+			final boolean aggresive, final boolean nameResolving) {
 		this.ast = ast;
 		this.pseudVariableID = pseudVariableID;
 		this.astRewriter = astRewriter;
 		this.aggresive = aggresive;
+		this.nameResolving = nameResolving;
 		this.changed = false;
 		this.context = CONTEXT.NORMAL;
 	}
@@ -609,6 +611,11 @@ public class JCFASTVisitor extends ASTVisitor {
 	}
 
 	private Type resolveBinding(final ITypeBinding binding) {
+
+		if (!this.nameResolving) {
+			final Type object = this.ast.newSimpleType(this.ast.newSimpleName("Object"));
+			return object;
+		}
 
 		if (null == binding) {
 			final Type java = this.ast.newSimpleType(this.ast.newSimpleName("java"));

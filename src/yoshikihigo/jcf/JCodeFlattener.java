@@ -46,7 +46,9 @@ public class JCodeFlattener {
 			System.exit(0);
 		}
 
-		if (null == classpathEntries) {
+		final boolean isNameResolving = !config.isFAST();
+
+		if (isNameResolving && null == classpathEntries) {
 			final String libraries = config.hasLIBRARY() ? config.getLIBRARY() : System.getProperty("java.class.path");
 			final String osname = System.getProperty("os.name");
 			if (osname.contains("Windows")) {
@@ -83,9 +85,9 @@ public class JCodeFlattener {
 						parser.setSource(document.get().toCharArray());
 						parser.setUnitName(input);
 						parser.setKind(ASTParser.K_COMPILATION_UNIT);
-						parser.setResolveBindings(true);
+						parser.setResolveBindings(isNameResolving);
 
-						if (null == sourceDirectories) {
+						if (isNameResolving && null == sourceDirectories) {
 							sourceDirectories = new String[] { inputFile.getAbsolutePath() };
 						}
 
@@ -100,7 +102,8 @@ public class JCodeFlattener {
 						final ASTRewrite rewriter = ASTRewrite.create(ast);
 						unit.recordModifications();
 
-						final JCFASTVisitor visitor = new JCFASTVisitor(ast, pseudVariableID++, rewriter, aggresive);
+						final JCFASTVisitor visitor = new JCFASTVisitor(ast, pseudVariableID++, rewriter, aggresive,
+								isNameResolving);
 						unit.accept(visitor);
 
 						if (!visitor.isChanged()) {
@@ -129,7 +132,9 @@ public class JCodeFlattener {
 
 			int index = 0;
 			final SortedSet<File> files = FileUtility.getFiles(inputFile);
-			sourceDirectories = files.stream().map(f -> f.getParentFile().getAbsolutePath()).toArray(String[]::new);
+			if (isNameResolving) {
+				sourceDirectories = files.stream().map(f -> f.getParentFile().getAbsolutePath()).toArray(String[]::new);
+			}
 
 			final int threads = config.getTHREADS();
 			final ExecutorService threadPool = Executors.newFixedThreadPool(threads);

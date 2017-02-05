@@ -34,6 +34,9 @@ public class JCFConfig {
 
 		OPTIONS.addOption(
 				Option.builder("t").longOpt("threads").required(false).hasArg(true).desc("number of threads").build());
+
+		OPTIONS.addOption(Option.builder("f").longOpt("fast").required(false).hasArg(false)
+				.desc("do not attempt name resolving").build());
 	}
 
 	static public JCFConfig initialize(final String[] args) {
@@ -110,5 +113,9 @@ public class JCFConfig {
 
 	public int getTHREADS() {
 		return this.commandLine.hasOption("t") ? Integer.valueOf(this.commandLine.getOptionValue("t")) : 1;
+	}
+
+	public boolean isFAST() {
+		return this.commandLine.hasOption("f");
 	}
 }
