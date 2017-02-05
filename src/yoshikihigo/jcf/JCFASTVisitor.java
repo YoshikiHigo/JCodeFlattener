@@ -554,8 +554,8 @@ public class JCFASTVisitor extends ASTVisitor {
 
 			final VariableDeclarationFragment fragment = this.ast.newVariableDeclarationFragment();
 			fragment.setName(this.ast.newSimpleName(newIdentifier));
-			final Expression newLeftExpression = (Expression) ASTNode.copySubtree(this.ast, expression);
-			fragment.setInitializer(newLeftExpression);
+			final Expression newRightExpression = (Expression) ASTNode.copySubtree(this.ast, expression);
+			fragment.setInitializer(newRightExpression);
 			final VariableDeclarationStatement newStatement = this.ast.newVariableDeclarationStatement(fragment);
 			newStatement.setType(resolvedType);
 			final ListRewrite variableDeclarationInserter = this.astRewriter.getListRewrite(parentBlock,
