@@ -14,10 +14,12 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.ToolFactory;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
+import org.eclipse.jdt.core.formatter.CodeFormatter;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
@@ -71,6 +73,9 @@ public class JCodeFlattener {
 				int pseudVariableID = 0;
 
 				if (input.endsWith(".java")) {
+
+					final CodeFormatter codeFormatter = ToolFactory.createCodeFormatter(null);
+
 					while (true) {
 						final Document document = new Document(text);
 
@@ -102,9 +107,14 @@ public class JCodeFlattener {
 							break;
 						}
 
-						final TextEdit edit = rewriter.rewriteAST(document,
+						final TextEdit edit1 = rewriter.rewriteAST(document,
 								DefaultCodeFormatterConstants.getEclipseDefaultSettings());
-						edit.apply(document);
+						edit1.apply(document);
+
+						final TextEdit edit2 = codeFormatter.format(CodeFormatter.K_COMPILATION_UNIT, document.get(), 0,
+								document.get().length(), 0, null);
+						edit2.apply(document);
+
 						text = document.get();
 					}
 				}
