@@ -37,6 +37,9 @@ public class JCFConfig {
 
 		OPTIONS.addOption(Option.builder("f").longOpt("fast").required(false).hasArg(false)
 				.desc("do not attempt name resolving").build());
+
+		OPTIONS.addOption(
+				Option.builder("n").longOpt("format").required(false).hasArg(false).desc("only do formatting").build());
 	}
 
 	static public JCFConfig initialize(final String[] args) {
@@ -117,5 +120,9 @@ public class JCFConfig {
 
 	public boolean isFAST() {
 		return this.commandLine.hasOption("f");
+	}
+
+	public boolean isFORMAT() {
+		return this.commandLine.hasOption("n");
 	}
 }

@@ -62,6 +62,7 @@ public class JCodeFlattener {
 		}
 
 		final String output = config.getOUTPUT();
+		final boolean isOnlyFormatting = config.isFORMAT();
 		final boolean aggresive = config.isAGGRESIVE();
 
 		final File inputFile = new File(input);
@@ -76,11 +77,9 @@ public class JCodeFlattener {
 
 				if (input.endsWith(".java")) {
 
-					final CodeFormatter codeFormatter = ToolFactory.createCodeFormatter(null);
+					final Document document = new Document(text);
 
-					while (true) {
-						final Document document = new Document(text);
-
+					while (!isOnlyFormatting) {
 						final ASTParser parser = ASTParser.newParser(AST.JLS8);
 						parser.setSource(document.get().toCharArray());
 						parser.setUnitName(input);
@@ -113,13 +112,15 @@ public class JCodeFlattener {
 						final TextEdit edit1 = rewriter.rewriteAST(document,
 								DefaultCodeFormatterConstants.getEclipseDefaultSettings());
 						edit1.apply(document);
-
-						final TextEdit edit2 = codeFormatter.format(CodeFormatter.K_COMPILATION_UNIT, document.get(), 0,
-								document.get().length(), 0, null);
-						edit2.apply(document);
-
 						text = document.get();
 					}
+
+					final CodeFormatter codeFormatter = ToolFactory.createCodeFormatter(null);
+					final TextEdit edit2 = codeFormatter.format(CodeFormatter.K_COMPILATION_UNIT, document.get(), 0,
+							document.get().length(), 0, null);
+					edit2.apply(document);
+					text = document.get();
+
 				}
 				FileUtils.write(outputFile, text, Charset.defaultCharset());
 
