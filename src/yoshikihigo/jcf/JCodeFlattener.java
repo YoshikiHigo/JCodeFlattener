@@ -142,8 +142,8 @@ public class JCodeFlattener {
 			final List<Future<?>> futures = new ArrayList<>();
 
 			for (final File file : files) {
-				final Future<?> future = threadPool
-						.submit(new MyThread(args, file, index++, files.size(), input, output, config.isVERBOSE()));
+				final Future<?> future = threadPool.submit(new MyThread(args, file, index++, files.size(), input,
+						output, inputFile, outputFile, config.isVERBOSE()));
 				futures.add(future);
 			}
 
@@ -178,18 +178,22 @@ public class JCodeFlattener {
 		final File file;
 		final int index;
 		final int files;
-		final String input;
-		final String output;
+		final String inputFile;
+		final String outputFile;
+		final File inputDir;
+		final File outputDir;
 		final boolean verbose;
 
 		MyThread(final String[] args, final File file, final int index, final int files, final String input,
-				final String output, final boolean verbose) {
+				final String output, final File inputFile, final File outputFile, final boolean verbose) {
 			this.args = args;
 			this.file = file;
 			this.index = index;
 			this.files = files;
-			this.input = input;
-			this.output = output;
+			this.inputFile = input;
+			this.outputFile = output;
+			this.inputDir = inputFile;
+			this.outputDir = outputFile;
 			this.verbose = verbose;
 		}
 
@@ -208,13 +212,14 @@ public class JCodeFlattener {
 				System.err.println(text.toString());
 			}
 
-			final String outputPath = this.file.getAbsolutePath().replace(this.input, this.output);
+			final String outputPath = this.file.getAbsolutePath().replace(this.inputDir.getAbsolutePath(),
+					this.outputDir.getAbsolutePath());
 
 			final String[] newArgs = new String[this.args.length];
 			for (int i = 0; i < this.args.length; i++) {
-				if (this.args[i].equals(this.input)) {
+				if (this.args[i].equals(this.inputFile)) {
 					newArgs[i] = this.file.getAbsolutePath();
-				} else if (args[i].equals(output)) {
+				} else if (args[i].equals(outputFile)) {
 					newArgs[i] = outputPath;
 				} else {
 					newArgs[i] = this.args[i];
