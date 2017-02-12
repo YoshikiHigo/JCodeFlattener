@@ -20,7 +20,6 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.formatter.CodeFormatter;
-import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
@@ -109,18 +108,19 @@ public class JCodeFlattener {
 							break;
 						}
 
-						final TextEdit edit1 = rewriter.rewriteAST(document,
-								DefaultCodeFormatterConstants.getEclipseDefaultSettings());
+						// final TextEdit edit1 = rewriter.rewriteAST(document,
+						// DefaultCodeFormatterConstants.getEclipseDefaultSettings());
+						final TextEdit edit1 = rewriter.rewriteAST(document, null);
 						edit1.apply(document);
 						text = document.get();
 					}
 
 					final CodeFormatter codeFormatter = ToolFactory.createCodeFormatter(null);
-					final TextEdit edit2 = codeFormatter.format(CodeFormatter.K_COMPILATION_UNIT, document.get(), 0,
+					final TextEdit codeEdit = codeFormatter.format(
+							CodeFormatter.K_COMPILATION_UNIT | CodeFormatter.F_INCLUDE_COMMENTS, document.get(), 0,
 							document.get().length(), 0, null);
-					edit2.apply(document);
+					codeEdit.apply(document);
 					text = document.get();
-
 				}
 				FileUtils.write(outputFile, text, Charset.defaultCharset());
 

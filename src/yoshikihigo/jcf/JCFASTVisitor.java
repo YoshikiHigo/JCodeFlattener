@@ -350,8 +350,10 @@ public class JCFASTVisitor extends ASTVisitor {
 	public boolean visit(final ParenthesizedExpression node) {
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
-			this.astRewriter.replace(node, e, null);
-			this.changed = true;
+			if (!(e instanceof CastExpression)) {
+				this.astRewriter.replace(node, e, null);
+				this.changed = true;
+			}
 		});
 
 		return false;
