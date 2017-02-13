@@ -20,6 +20,7 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.formatter.CodeFormatter;
+import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
@@ -115,7 +116,8 @@ public class JCodeFlattener {
 						text = document.get();
 					}
 
-					final CodeFormatter codeFormatter = ToolFactory.createCodeFormatter(null);
+					final CodeFormatter codeFormatter = ToolFactory
+							.createCodeFormatter(DefaultCodeFormatterConstants.getEclipseDefaultSettings());
 					final TextEdit codeEdit = codeFormatter.format(
 							CodeFormatter.K_COMPILATION_UNIT | CodeFormatter.F_INCLUDE_COMMENTS, document.get(), 0,
 							document.get().length(), 0, null);
