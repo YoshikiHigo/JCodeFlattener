@@ -109,17 +109,20 @@ public class JCodeFlattener {
 							break;
 						}
 
-						// final TextEdit edit1 = rewriter.rewriteAST(document,
-						// DefaultCodeFormatterConstants.getEclipseDefaultSettings());
-						final TextEdit edit1 = rewriter.rewriteAST(document, null);
+						//final TextEdit edit1 = rewriter.rewriteAST(document,
+								//DefaultCodeFormatterConstants.getEclipseDefaultSettings());
+						final TextEdit edit1 = rewriter.rewriteAST(document,
+						 null);
 						edit1.apply(document);
 						text = document.get();
 					}
 
-					final CodeFormatter codeFormatter = ToolFactory
-							.createCodeFormatter(DefaultCodeFormatterConstants.getEclipseDefaultSettings());
+					//final CodeFormatter codeFormatter = ToolFactory
+					//		.createCodeFormatter(DefaultCodeFormatterConstants.getEclipseDefaultSettings());
+					 final CodeFormatter codeFormatter = ToolFactory
+					 .createCodeFormatter(null);
 					final TextEdit codeEdit = codeFormatter.format(
-							CodeFormatter.K_COMPILATION_UNIT | CodeFormatter.F_INCLUDE_COMMENTS, document.get(), 0,
+							CodeFormatter.K_COMPILATION_UNIT /*| CodeFormatter.F_INCLUDE_COMMENTS*/, document.get(), 0,
 							document.get().length(), 0, null);
 					codeEdit.apply(document);
 					text = document.get();
