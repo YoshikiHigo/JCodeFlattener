@@ -78,17 +78,6 @@ public class JCFASTVisitor extends ASTVisitor {
 	}
 
 	@Override
-	public void preVisit(ASTNode node) {
-		super.preVisit(node);
-	}
-
-	@Override
-	public boolean preVisit2(ASTNode node) {
-		// TODO Auto-generated method stub
-		return super.preVisit2(node);
-	}
-
-	@Override
 	public boolean visit(final ArrayAccess node) {
 
 		Optional.ofNullable(node.getIndex()).ifPresent(i -> {
