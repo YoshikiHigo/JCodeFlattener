@@ -40,6 +40,9 @@ public class JCFConfig {
 
 		OPTIONS.addOption(
 				Option.builder("n").longOpt("format").required(false).hasArg(false).desc("only do formatting").build());
+
+		OPTIONS.addOption(
+				Option.builder("c").longOpt("comment").required(false).hasArg(false).desc("remove comments").build());
 	}
 
 	static public JCFConfig initialize(final String[] args) {
@@ -124,5 +127,9 @@ public class JCFConfig {
 
 	public boolean isFORMAT() {
 		return this.commandLine.hasOption("n");
+	}
+
+	public boolean isCOMMENT() {
+		return this.commandLine.hasOption("c");
 	}
 }

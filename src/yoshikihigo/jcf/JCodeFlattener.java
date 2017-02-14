@@ -17,10 +17,10 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.ToolFactory;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.Comment;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.formatter.CodeFormatter;
-import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
@@ -31,6 +31,7 @@ public class JCodeFlattener {
 	private static String[] sourceDirectories = null;
 	private static String[] classpathEntries = null;
 
+	@SuppressWarnings("unchecked")
 	public static void main(final String[] args) {
 
 		final JCFConfig config = JCFConfig.initialize(args);
@@ -109,20 +110,40 @@ public class JCodeFlattener {
 							break;
 						}
 
-						//final TextEdit edit1 = rewriter.rewriteAST(document,
-								//DefaultCodeFormatterConstants.getEclipseDefaultSettings());
-						final TextEdit edit1 = rewriter.rewriteAST(document,
-						 null);
+						// final TextEdit edit1 = rewriter.rewriteAST(document,
+						// DefaultCodeFormatterConstants.getEclipseDefaultSettings());
+						final TextEdit edit1 = rewriter.rewriteAST(document, null);
 						edit1.apply(document);
 						text = document.get();
 					}
 
-					//final CodeFormatter codeFormatter = ToolFactory
-					//		.createCodeFormatter(DefaultCodeFormatterConstants.getEclipseDefaultSettings());
-					 final CodeFormatter codeFormatter = ToolFactory
-					 .createCodeFormatter(null);
-					final TextEdit codeEdit = codeFormatter.format(
-							CodeFormatter.K_COMPILATION_UNIT /*| CodeFormatter.F_INCLUDE_COMMENTS*/, document.get(), 0,
+					if (config.isCOMMENT()) {
+						final ASTParser parser = ASTParser.newParser(AST.JLS8);
+						parser.setSource(document.get().toCharArray());
+						parser.setUnitName(input);
+						parser.setKind(ASTParser.K_COMPILATION_UNIT);
+						parser.setResolveBindings(false);
+
+						final Map<String, String> options = JavaCore.getOptions();
+						JavaCore.setComplianceOptions(JavaCore.VERSION_1_8, options);
+						parser.setCompilerOptions(options);
+
+						final CompilationUnit unit = (CompilationUnit) parser.createAST(null);
+						((List<Comment>) unit.getCommentList()).stream().forEach(e -> {
+							e.accept(new JCFCommentVisitor());
+							e.delete();
+						});
+
+						text = unit.toString();
+						document.set(text);
+					}
+
+					final CodeFormatter codeFormatter = ToolFactory.createCodeFormatter(null);
+					// final TextEdit codeEdit = codeFormatter.format(
+					// CodeFormatter.K_COMPILATION_UNIT |
+					// CodeFormatter.F_INCLUDE_COMMENTS, document.get(), 0,
+					// document.get().length(), 0, null);
+					final TextEdit codeEdit = codeFormatter.format(CodeFormatter.K_COMPILATION_UNIT, document.get(), 0,
 							document.get().length(), 0, null);
 					codeEdit.apply(document);
 					text = document.get();
