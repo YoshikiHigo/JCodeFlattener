@@ -349,19 +349,6 @@ public class JCFASTVisitor extends ASTVisitor {
 	}
 
 	@Override
-	public boolean visit(final ParenthesizedExpression node) {
-
-		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
-			if (!(e instanceof CastExpression)) {
-				this.astRewriter.replace(node, e, null);
-				this.changed = true;
-			}
-		});
-
-		return false;
-	}
-
-	@Override
 	public boolean visit(final PostfixExpression node) {
 
 		Optional.ofNullable(node.getOperand()).ifPresent(e -> {
@@ -549,18 +536,26 @@ public class JCFASTVisitor extends ASTVisitor {
 			return null;
 		}
 
+		Expression targetExpression = expression;
+		if (expression instanceof ParenthesizedExpression) {
+			targetExpression = ((ParenthesizedExpression) expression).getExpression();
+			if (null == targetExpression) {
+				targetExpression = expression;
+			}
+		}
+
 		// generate a new artificial variable name
 		final String newIdentifier = "$" + this.pseudVariableID;
 
 		// make a new variable declaration statement
 		if ((CONTEXT.NORMAL == this.context) || (CONTEXT.LOOPCONDITION == this.context)) {
 
-			final ITypeBinding binding = expression.resolveTypeBinding();
+			final ITypeBinding binding = targetExpression.resolveTypeBinding();
 			final Type resolvedType = this.resolveBinding(binding);
 
 			final VariableDeclarationFragment fragment = this.ast.newVariableDeclarationFragment();
 			fragment.setName(this.ast.newSimpleName(newIdentifier));
-			final Expression newRightExpression = (Expression) ASTNode.copySubtree(this.ast, expression);
+			final Expression newRightExpression = (Expression) ASTNode.copySubtree(this.ast, targetExpression);
 			fragment.setInitializer(newRightExpression);
 			final VariableDeclarationStatement newStatement = this.ast.newVariableDeclarationStatement(fragment);
 			newStatement.setType(resolvedType);
@@ -571,7 +566,7 @@ public class JCFASTVisitor extends ASTVisitor {
 
 		// processing for while- and for-statement
 		if ((CONTEXT.LOOPCONDITION == this.context) || (CONTEXT.LOOPUPDATER == this.context)) {
-			this.doForLoopBlock(parentStatement, expression, newIdentifier);
+			this.doForLoopBlock(parentStatement, targetExpression, newIdentifier);
 		}
 
 		// replace the existing expression with a new variable reference
