@@ -6,6 +6,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.SortedSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -21,6 +22,8 @@ import org.eclipse.jdt.core.dom.Comment;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.formatter.CodeFormatter;
+import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
+import org.eclipse.jdt.internal.compiler.impl.CompilerOptions;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
@@ -47,7 +50,7 @@ public class JCodeFlattener {
 			System.exit(0);
 		}
 
-		final boolean isNameResolving = !config.isFAST();
+		final boolean isNameResolving = !config.isRAPID();
 
 		if (isNameResolving && null == classpathEntries) {
 			final String libraries = config.hasLIBRARY() ? config.getLIBRARY() : System.getProperty("java.class.path");
@@ -63,7 +66,7 @@ public class JCodeFlattener {
 		}
 
 		final String output = config.getOUTPUT();
-		final boolean isOnlyFormatting = config.isFORMAT();
+		final boolean isOnlyDRYRUN = config.isDRYRUN();
 		final boolean aggresive = config.isAGGRESIVE();
 
 		final File inputFile = new File(input);
@@ -80,7 +83,7 @@ public class JCodeFlattener {
 
 					final Document document = new Document(text);
 
-					while (!isOnlyFormatting) {
+					while (!isOnlyDRYRUN) {
 						final ASTParser parser = ASTParser.newParser(AST.JLS8);
 						parser.setSource(document.get().toCharArray());
 						parser.setUnitName(input);
@@ -93,8 +96,11 @@ public class JCodeFlattener {
 
 						parser.setEnvironment(classpathEntries, sourceDirectories, null, true);
 
-						final Map<String, String> options = JavaCore.getOptions();
-						JavaCore.setComplianceOptions(JavaCore.VERSION_1_8, options);
+						final Map<String, String> options = DefaultCodeFormatterConstants.getEclipseDefaultSettings();
+						options.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_8);
+						options.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_8);
+						options.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_8);
+
 						parser.setCompilerOptions(options);
 
 						final CompilationUnit unit = (CompilationUnit) parser.createAST(null);
@@ -124,8 +130,10 @@ public class JCodeFlattener {
 						parser.setKind(ASTParser.K_COMPILATION_UNIT);
 						parser.setResolveBindings(false);
 
-						final Map<String, String> options = JavaCore.getOptions();
-						JavaCore.setComplianceOptions(JavaCore.VERSION_1_8, options);
+						final Map<String, String> options = DefaultCodeFormatterConstants.getEclipseDefaultSettings();
+						options.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_8);
+						options.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_8);
+						options.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_8);
 						parser.setCompilerOptions(options);
 
 						final CompilationUnit unit = (CompilationUnit) parser.createAST(null);
@@ -138,15 +146,21 @@ public class JCodeFlattener {
 						document.set(text);
 					}
 
-					final CodeFormatter codeFormatter = ToolFactory.createCodeFormatter(null);
-					// final TextEdit codeEdit = codeFormatter.format(
-					// CodeFormatter.K_COMPILATION_UNIT |
-					// CodeFormatter.F_INCLUDE_COMMENTS, document.get(), 0,
-					// document.get().length(), 0, null);
-					final TextEdit codeEdit = codeFormatter.format(CodeFormatter.K_COMPILATION_UNIT, document.get(), 0,
-							document.get().length(), 0, null);
-					codeEdit.apply(document);
-					text = document.get();
+					if (config.isFORMAT()) {
+						final Properties prefs = new Properties();
+						prefs.putAll(JavaCore.getOptions());
+						prefs.setProperty(JavaCore.COMPILER_SOURCE, CompilerOptions.VERSION_1_8);
+						prefs.setProperty(JavaCore.COMPILER_COMPLIANCE, CompilerOptions.VERSION_1_8);
+						prefs.setProperty(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, CompilerOptions.VERSION_1_8);
+						final CodeFormatter codeFormatter = ToolFactory.createCodeFormatter(prefs);
+						final TextEdit codeEdit = codeFormatter.format(
+								CodeFormatter.K_COMPILATION_UNIT | CodeFormatter.F_INCLUDE_COMMENTS, document.get(), 0,
+								document.get().length(), 0, System.getProperty("line.separator"));
+						if (null != codeEdit) {
+							codeEdit.apply(document);
+						}
+						text = document.get();
+					}
 				}
 				FileUtils.write(outputFile, text, Charset.defaultCharset());
 

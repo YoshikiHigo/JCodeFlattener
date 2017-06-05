@@ -35,11 +35,14 @@ public class JCFConfig {
 		OPTIONS.addOption(
 				Option.builder("t").longOpt("threads").required(false).hasArg(true).desc("number of threads").build());
 
-		OPTIONS.addOption(Option.builder("f").longOpt("fast").required(false).hasArg(false)
+		OPTIONS.addOption(Option.builder("r").longOpt("rapid").required(false).hasArg(false)
 				.desc("do not attempt name resolving").build());
 
 		OPTIONS.addOption(
-				Option.builder("n").longOpt("format").required(false).hasArg(false).desc("only do formatting").build());
+				Option.builder("n").longOpt("dry-run").required(false).hasArg(false).desc("not do flattening").build());
+
+		OPTIONS.addOption(
+				Option.builder("f").longOpt("format").required(false).hasArg(false).desc("do formatting").build());
 
 		OPTIONS.addOption(
 				Option.builder("c").longOpt("comment").required(false).hasArg(false).desc("remove comments").build());
@@ -121,12 +124,16 @@ public class JCFConfig {
 		return this.commandLine.hasOption("t") ? Integer.valueOf(this.commandLine.getOptionValue("t")) : 1;
 	}
 
-	public boolean isFAST() {
-		return this.commandLine.hasOption("f");
+	public boolean isRAPID() {
+		return this.commandLine.hasOption("r");
+	}
+
+	public boolean isDRYRUN() {
+		return this.commandLine.hasOption("n");
 	}
 
 	public boolean isFORMAT() {
-		return this.commandLine.hasOption("n");
+		return this.commandLine.hasOption("f");
 	}
 
 	public boolean isCOMMENT() {
