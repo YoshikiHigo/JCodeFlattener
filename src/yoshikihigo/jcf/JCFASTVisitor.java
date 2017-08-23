@@ -2,6 +2,7 @@ package yoshikihigo.jcf;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -58,7 +59,7 @@ import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 
 public class JCFASTVisitor extends ASTVisitor {
 
-	final private int pseudVariableID;
+	final private AtomicInteger pseudVariableID;
 	final private AST ast;
 	final private ASTRewrite astRewriter;
 	final private boolean aggresive;
@@ -66,7 +67,7 @@ public class JCFASTVisitor extends ASTVisitor {
 	private boolean changed;
 	private CONTEXT context;
 
-	public JCFASTVisitor(final AST ast, final int pseudVariableID, final ASTRewrite astRewriter,
+	public JCFASTVisitor(final AST ast, final AtomicInteger pseudVariableID, final ASTRewrite astRewriter,
 			final boolean aggresive, final boolean nameResolving) {
 		this.ast = ast;
 		this.pseudVariableID = pseudVariableID;
@@ -81,13 +82,15 @@ public class JCFASTVisitor extends ASTVisitor {
 	public boolean visit(final ArrayAccess node) {
 
 		Optional.ofNullable(node.getIndex()).ifPresent(i -> {
-			i.accept(this);
-			this.dissolveExpression(i);
+			if (null == this.dissolveExpression(i)) {
+				i.accept(this);
+			}
 		});
 
 		Optional.ofNullable(node.getArray()).ifPresent(a -> {
-			a.accept(this);
-			this.dissolveExpression(a);
+			if (null == this.dissolveExpression(a)) {
+				a.accept(this);
+			}
 		});
 
 		return false;
@@ -99,8 +102,9 @@ public class JCFASTVisitor extends ASTVisitor {
 		@SuppressWarnings("unchecked")
 		final List<Expression> expressions = node.dimensions();
 		expressions.stream().forEach(e -> {
-			e.accept(this);
-			this.dissolveExpression(e);
+			if (null == this.dissolveExpression(e)) {
+				e.accept(this);
+			}
 		});
 
 		return false;
@@ -112,8 +116,10 @@ public class JCFASTVisitor extends ASTVisitor {
 		@SuppressWarnings("unchecked")
 		final List<Expression> expressions = node.expressions();
 		expressions.stream().forEach(e -> {
-			e.accept(this);
-			this.dissolveExpression(e);
+			if (null == this.dissolveExpression(e)) {
+				e.accept(this);
+			}
+
 		});
 
 		return false;
@@ -123,15 +129,17 @@ public class JCFASTVisitor extends ASTVisitor {
 	public boolean visit(final AssertStatement node) {
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
-			e.accept(this);
-			if (this.aggresive) {
-				this.dissolveExpression(e);
+			if (this.aggresive && (null != this.dissolveExpression(e))) {
+				return;
 			}
+			e.accept(this);
+
 		});
 
 		Optional.ofNullable(node.getMessage()).ifPresent(m -> {
-			m.accept(this);
-			this.dissolveExpression(m);
+			if (null == this.dissolveExpression(m)) {
+				m.accept(this);
+			}
 		});
 
 		return false;
@@ -141,8 +149,9 @@ public class JCFASTVisitor extends ASTVisitor {
 	public boolean visit(final CastExpression node) {
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
-			e.accept(this);
-			this.dissolveExpression(e);
+			if (null == this.dissolveExpression(e)) {
+				e.accept(this);
+			}
 		});
 
 		return false;
@@ -154,13 +163,15 @@ public class JCFASTVisitor extends ASTVisitor {
 		@SuppressWarnings("unchecked")
 		final List<Expression> arguments = node.arguments();
 		arguments.stream().forEach(e -> {
-			e.accept(this);
-			this.dissolveExpression(e);
+			if (null == this.dissolveExpression(e)) {
+				e.accept(this);
+			}
 		});
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
-			e.accept(this);
-			this.dissolveExpression(e);
+			if (null == this.dissolveExpression(e)) {
+				e.accept(this);
+			}
 		});
 
 		Optional.ofNullable(node.getAnonymousClassDeclaration()).ifPresent(e -> e.accept(this));
@@ -172,20 +183,23 @@ public class JCFASTVisitor extends ASTVisitor {
 	public boolean visit(final ConditionalExpression node) {
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
-			e.accept(this);
-			if (this.aggresive) {
-				this.dissolveExpression(e);
+			if (this.aggresive && (null != this.dissolveExpression(e))) {
+				return;
 			}
+			e.accept(this);
+
 		});
 
 		Optional.ofNullable(node.getThenExpression()).ifPresent(e -> {
-			e.accept(this);
-			this.dissolveExpression(e);
+			if (null == this.dissolveExpression(e)) {
+				e.accept(this);
+			}
 		});
 
 		Optional.ofNullable(node.getElseExpression()).ifPresent(e -> {
-			e.accept(this);
-			this.dissolveExpression(e);
+			if (null == this.dissolveExpression(e)) {
+				e.accept(this);
+			}
 		});
 
 		return false;
@@ -197,8 +211,9 @@ public class JCFASTVisitor extends ASTVisitor {
 		@SuppressWarnings("unchecked")
 		final List<Expression> arguments = node.arguments();
 		arguments.stream().forEach(e -> {
-			e.accept(this);
-			this.dissolveExpression(e);
+			if (null == this.dissolveExpression(e)) {
+				e.accept(this);
+			}
 		});
 
 		return false;
@@ -210,10 +225,11 @@ public class JCFASTVisitor extends ASTVisitor {
 		node.getBody().accept(this);
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
-			e.accept(this);
-			if (this.aggresive) {
-				this.dissolveExpression(e);
+			if (this.aggresive && (null != this.dissolveExpression(e))) {
+				return;
 			}
+			e.accept(this);
+
 		});
 
 		return false;
@@ -223,8 +239,9 @@ public class JCFASTVisitor extends ASTVisitor {
 	public boolean visit(final EnhancedForStatement node) {
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
-			e.accept(this);
-			this.dissolveExpression(e);
+			if (null == this.dissolveExpression(e)) {
+				e.accept(this);
+			}
 		});
 
 		node.getBody().accept(this);
@@ -236,8 +253,9 @@ public class JCFASTVisitor extends ASTVisitor {
 	public boolean visit(final ExpressionMethodReference node) {
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
-			e.accept(this);
-			this.dissolveExpression(e);
+			if (null == this.dissolveExpression(e)) {
+				e.accept(this);
+			}
 		});
 
 		return false;
@@ -249,8 +267,8 @@ public class JCFASTVisitor extends ASTVisitor {
 		@SuppressWarnings("unchecked")
 		final List<Expression> initializers = node.initializers();
 		initializers.stream().forEach(e -> {
-			e.accept(this);
 			// do not call dissolveExpression(e)!
+			e.accept(this);
 		});
 
 		this.context = CONTEXT.LOOPUPDATER;
@@ -258,17 +276,18 @@ public class JCFASTVisitor extends ASTVisitor {
 		@SuppressWarnings("unchecked")
 		final List<Expression> updaters = node.updaters();
 		updaters.stream().forEach(e -> {
-			e.accept(this);
 			// do not call dissolveExpression(e)!
+			e.accept(this);
 		});
 
 		this.context = CONTEXT.LOOPCONDITION;
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
-			e.accept(this);
-			if (this.aggresive) {
-				this.dissolveExpression(e);
+			if (this.aggresive && (null != this.dissolveExpression(e))) {
+				return;
 			}
+			e.accept(this);
+
 		});
 
 		this.context = CONTEXT.NORMAL;
@@ -282,10 +301,11 @@ public class JCFASTVisitor extends ASTVisitor {
 	public boolean visit(final IfStatement node) {
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
-			e.accept(this);
-			if (this.aggresive) {
-				this.dissolveExpression(e);
+			if (this.aggresive && (null != this.dissolveExpression(e))) {
+				return;
 			}
+			e.accept(this);
+
 		});
 
 		Optional.ofNullable(node.getThenStatement()).ifPresent(e -> e.accept(this));
@@ -299,20 +319,23 @@ public class JCFASTVisitor extends ASTVisitor {
 	public boolean visit(final InfixExpression node) {
 
 		Optional.ofNullable(node.getLeftOperand()).ifPresent(e -> {
-			e.accept(this);
-			this.dissolveExpression(e);
+			if (null == this.dissolveExpression(e)) {
+				e.accept(this);
+			}
 		});
 
 		Optional.ofNullable(node.getRightOperand()).ifPresent(e -> {
-			e.accept(this);
-			this.dissolveExpression(e);
+			if (null == this.dissolveExpression(e)) {
+				e.accept(this);
+			}
 		});
 
 		Optional.ofNullable(node.extendedOperands()).ifPresent(e -> {
 			e.stream().forEach(f -> {
-				Expression g = (Expression) f;
-				g.accept(this);
-				this.dissolveExpression(g);
+				final Expression g = (Expression) f;
+				if (null == this.dissolveExpression(g)) {
+					g.accept(this);
+				}
 			});
 		});
 
@@ -323,8 +346,9 @@ public class JCFASTVisitor extends ASTVisitor {
 	public boolean visit(final InstanceofExpression node) {
 
 		Optional.ofNullable(node.getLeftOperand()).ifPresent(e -> {
-			e.accept(this);
-			this.dissolveExpression(e);
+			if (null == this.dissolveExpression(e)) {
+				e.accept(this);
+			}
 		});
 
 		return false;
@@ -336,13 +360,15 @@ public class JCFASTVisitor extends ASTVisitor {
 		@SuppressWarnings("unchecked")
 		final List<Expression> arguments = node.arguments();
 		arguments.stream().forEach(e -> {
-			e.accept(this);
-			this.dissolveExpression(e);
+			if (null == this.dissolveExpression(e)) {
+				e.accept(this);
+			}
 		});
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
-			e.accept(this);
-			this.dissolveExpression(e);
+			if (null == this.dissolveExpression(e)) {
+				e.accept(this);
+			}
 		});
 
 		return false;
@@ -352,8 +378,9 @@ public class JCFASTVisitor extends ASTVisitor {
 	public boolean visit(final PostfixExpression node) {
 
 		Optional.ofNullable(node.getOperand()).ifPresent(e -> {
-			e.accept(this);
-			this.dissolveExpression(e);
+			if (null == this.dissolveExpression(e)) {
+				e.accept(this);
+			}
 		});
 
 		return false;
@@ -363,8 +390,9 @@ public class JCFASTVisitor extends ASTVisitor {
 	public boolean visit(final PrefixExpression node) {
 
 		Optional.ofNullable(node.getOperand()).ifPresent(e -> {
-			e.accept(this);
-			this.dissolveExpression(e);
+			if (null == this.dissolveExpression(e)) {
+				e.accept(this);
+			}
 		});
 
 		return false;
@@ -374,8 +402,9 @@ public class JCFASTVisitor extends ASTVisitor {
 	public boolean visit(final ReturnStatement node) {
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
-			e.accept(this);
-			this.dissolveExpression(e);
+			if (null == this.dissolveExpression(e)) {
+				e.accept(this);
+			}
 		});
 
 		return false;
@@ -387,13 +416,15 @@ public class JCFASTVisitor extends ASTVisitor {
 		@SuppressWarnings("unchecked")
 		final List<Expression> arguments = node.arguments();
 		arguments.stream().forEach(a -> {
-			a.accept(this);
-			this.dissolveExpression(a);
+			if (null == this.dissolveExpression(a)) {
+				a.accept(this);
+			}
 		});
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
-			e.accept(this);
-			this.dissolveExpression(node.getExpression());
+			if (null == this.dissolveExpression(node.getExpression())) {
+				e.accept(this);
+			}
 		});
 
 		return false;
@@ -405,8 +436,9 @@ public class JCFASTVisitor extends ASTVisitor {
 		@SuppressWarnings("unchecked")
 		final List<Expression> arguments = node.arguments();
 		arguments.stream().forEach(a -> {
-			a.accept(this);
-			this.dissolveExpression(a);
+			if (null == this.dissolveExpression(a)) {
+				a.accept(this);
+			}
 		});
 
 		return false;
@@ -416,10 +448,11 @@ public class JCFASTVisitor extends ASTVisitor {
 	public boolean visit(final SwitchStatement node) {
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
-			e.accept(this);
-			if (this.aggresive) {
-				this.dissolveExpression(e);
+			if (this.aggresive && (null != this.dissolveExpression(e))) {
+				return;
 			}
+			e.accept(this);
+
 		});
 
 		@SuppressWarnings("unchecked")
@@ -433,10 +466,11 @@ public class JCFASTVisitor extends ASTVisitor {
 	public boolean visit(final SynchronizedStatement node) {
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
-			e.accept(this);
-			if (this.aggresive) {
-				this.dissolveExpression(e);
+			if (this.aggresive && (null != this.dissolveExpression(e))) {
+				return;
 			}
+			e.accept(this);
+
 		});
 
 		node.getBody().accept(this);
@@ -448,8 +482,9 @@ public class JCFASTVisitor extends ASTVisitor {
 	public boolean visit(final ThrowStatement node) {
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
-			e.accept(this);
-			this.dissolveExpression(e);
+			if (null == this.dissolveExpression(e)) {
+				e.accept(this);
+			}
 		});
 
 		return false;
@@ -460,10 +495,11 @@ public class JCFASTVisitor extends ASTVisitor {
 		this.context = CONTEXT.LOOPCONDITION;
 
 		Optional.ofNullable(node.getExpression()).ifPresent(e -> {
-			e.accept(this);
-			if (this.aggresive) {
-				this.dissolveExpression(e);
+			if (this.aggresive && (null != this.dissolveExpression(e))) {
+				return;
 			}
+			e.accept(this);
+
 		});
 
 		this.context = CONTEXT.NORMAL;
@@ -507,10 +543,6 @@ public class JCFASTVisitor extends ASTVisitor {
 
 	private Expression dissolveExpression(final Expression expression) {
 
-		if (this.changed) {
-			return null;
-		}
-
 		if (null == expression) {
 			return null;
 		}
@@ -545,7 +577,7 @@ public class JCFASTVisitor extends ASTVisitor {
 		}
 
 		// generate a new artificial variable name
-		final String newIdentifier = "$" + this.pseudVariableID;
+		final String newIdentifier = "$" + this.pseudVariableID.getAndIncrement();
 
 		// make a new variable declaration statement
 		if ((CONTEXT.NORMAL == this.context) || (CONTEXT.LOOPCONDITION == this.context)) {

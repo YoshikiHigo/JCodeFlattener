@@ -12,6 +12,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.JavaCore;
@@ -77,7 +78,7 @@ public class JCodeFlattener {
 			try {
 
 				String text = FileUtils.readFileToString(inputFile, Charset.defaultCharset());
-				int pseudVariableID = 0;
+				final AtomicInteger pseudVariableID = new AtomicInteger(0);
 
 				if (input.endsWith(".java")) {
 
@@ -108,7 +109,7 @@ public class JCodeFlattener {
 						final ASTRewrite rewriter = ASTRewrite.create(ast);
 						unit.recordModifications();
 
-						final JCFASTVisitor visitor = new JCFASTVisitor(ast, pseudVariableID++, rewriter, aggresive,
+						final JCFASTVisitor visitor = new JCFASTVisitor(ast, pseudVariableID, rewriter, aggresive,
 								isNameResolving);
 						unit.accept(visitor);
 
