@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -13,6 +14,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.JavaCore;
@@ -32,8 +34,8 @@ import org.eclipse.text.edits.TextEdit;
 
 public class JCodeFlattener {
 
-	private static String[] sourceDirectories = null;
-	private static String[] classpathEntries = null;
+	private static List<String> sourceDirectories = new ArrayList<>();
+	private static List<String> classpathEntries = new ArrayList<>();
 
 	@SuppressWarnings("unchecked")
 	public static void main(final String[] args) {
@@ -53,17 +55,11 @@ public class JCodeFlattener {
 
 		final boolean isNameResolving = !config.isRAPID();
 
-		if (isNameResolving && null == classpathEntries) {
-			final String libraries = config.hasLIBRARY() ? config.getLIBRARY() : System.getProperty("java.class.path");
-			final String osname = System.getProperty("os.name");
-			if (osname.contains("Windows")) {
-				classpathEntries = libraries.split(";");
-			} else if (osname.contains("Linux") || osname.contains("Mac")) {
-				classpathEntries = libraries.split(":");
-			} else {
-				System.err.println("Your OS (" + osname + ") is not supported by this tool.");
-				System.exit(0);
-			}
+		if (isNameResolving && classpathEntries.isEmpty()) {
+			final String systemLibraries = System.getProperty("java.class.path");
+			final String externalLibraries = config.hasLIBRARY() ? config.getLIBRARY() : "";
+			classpathEntries.addAll(Arrays.asList(systemLibraries.split(File.pathSeparator)));
+			classpathEntries.addAll(Arrays.asList(externalLibraries.split(File.pathSeparator)));
 		}
 
 		final String output = config.getOUTPUT();
@@ -90,12 +86,15 @@ public class JCodeFlattener {
 						parser.setUnitName(input);
 						parser.setKind(ASTParser.K_COMPILATION_UNIT);
 						parser.setResolveBindings(isNameResolving);
+						parser.setBindingsRecovery(true);
+						parser.setStatementsRecovery(true);
 
 						if (isNameResolving && null == sourceDirectories) {
-							sourceDirectories = new String[] { inputFile.getAbsolutePath() };
+							sourceDirectories.add(inputFile.getAbsolutePath());
 						}
 
-						parser.setEnvironment(classpathEntries, sourceDirectories, null, true);
+						parser.setEnvironment(classpathEntries.toArray(new String[0]),
+								sourceDirectories.toArray(new String[0]), null, true);
 
 						final Map<String, String> options = DefaultCodeFormatterConstants.getEclipseDefaultSettings();
 						options.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_8);
@@ -175,7 +174,8 @@ public class JCodeFlattener {
 			int index = 0;
 			final SortedSet<File> files = FileUtility.getFiles(inputFile);
 			if (isNameResolving) {
-				sourceDirectories = files.stream().map(f -> f.getParentFile().getAbsolutePath()).toArray(String[]::new);
+				sourceDirectories.addAll(
+						files.stream().map(f -> f.getParentFile().getAbsolutePath()).collect(Collectors.toList()));
 			}
 
 			final int threads = config.getTHREADS();
