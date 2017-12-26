@@ -665,23 +665,17 @@ public class JCFASTVisitor extends ASTVisitor {
 		else {
 
 			IPackageBinding packageName = null;
-			String typeName = null;
+			String typeName = "Object"; // XXX shouldn't be Object
 			if (binding.isAnonymous()) {
-				packageName = null;
-				typeName = "Object"; // XXX shouldn't be Object
+				if (binding.getInterfaces().length != 0) {
+					packageName = binding.getInterfaces()[0].getPackage();
+					typeName = binding.getInterfaces()[0].getName();
+				}
 			} else if (binding.isTypeVariable()) {
-				packageName = null;
-				typeName = "Object"; // XXX shouldn't be Object
-			} else if (binding.isCapture()) {
-				packageName = null;
-				typeName = "Object"; // XXX shouldn't be Object
-			} else if (binding.isWildcardType()) {
-				packageName = null;
-				typeName = "Object";
-			} else if (binding.isNullType()) {
-				packageName = null;
-				typeName = "Object";
-			} else {
+				if (!binding.getName().equals("")) {
+					typeName = binding.getName();
+				}
+			} else if (!binding.isCapture() && !binding.isWildcardType() && !binding.isNullType()) {
 				packageName = binding.getPackage();
 				typeName = binding.getErasure().getName();
 			}

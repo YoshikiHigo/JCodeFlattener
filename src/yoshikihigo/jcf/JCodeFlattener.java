@@ -89,8 +89,8 @@ public class JCodeFlattener {
 						parser.setBindingsRecovery(true);
 						parser.setStatementsRecovery(true);
 
-						if (isNameResolving && null == sourceDirectories) {
-							sourceDirectories.add(inputFile.getAbsolutePath());
+						if (isNameResolving && sourceDirectories.isEmpty()) {
+							sourceDirectories.add(inputFile.getParentFile().getAbsolutePath());
 						}
 
 						parser.setEnvironment(classpathEntries.toArray(new String[0]),
