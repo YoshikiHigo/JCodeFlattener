@@ -1,4 +1,4 @@
-package yoshikihigo.jcf.testcases;
+package example;
 
 public class OverrideTest3 {
 

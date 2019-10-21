@@ -1,4 +1,4 @@
-package yoshikihigo.jcf.testcases;
+package example;
 
 import java.util.ArrayList;
 import java.util.List;
