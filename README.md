@@ -1,4 +1,4 @@
-# JCodeFlattener
+# JCodeFlattener [![](https://jitpack.io/v/YoshikiHigo/JCodeFlattener.svg)](https://jitpack.io/#YoshikiHigo/JCodeFlattener)
 
 JCodeFlatter is a program that convert Java source code to flattened one.
 In flattened code, all complex program statement are decomposed to simple ones.
