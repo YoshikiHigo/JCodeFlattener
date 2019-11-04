@@ -8,31 +8,32 @@ import org.eclipse.jdt.core.dom.LineComment;
 
 public class JCFCommentVisitor extends ASTVisitor {
 
-	@Override
-	public boolean visit(final BlockComment node) {
-		final ASTNode naltroot = node.getAlternateRoot();
-		if (naltroot != null) {
-			naltroot.delete();
-		} else {
-			node.delete();
-		}
-		return super.visit(node);
-	}
+  @Override
+  public boolean visit(final BlockComment node) {
+    final ASTNode naltroot = node.getAlternateRoot();
+    if (naltroot != null) {
+      naltroot.delete();
+    } else {
+      node.delete();
+    }
+    return super.visit(node);
+  }
 
-	@Override
-	public boolean visit(final Javadoc node) {
-		final ASTNode naltroot = node.getAlternateRoot();
-		if (naltroot != null) {
-			naltroot.delete();
-		} else {
-			node.delete();
-		}
-		return super.visit(node);
-	}
+  @Override
+  public boolean visit(final Javadoc node) {
+    final ASTNode naltroot = node.getAlternateRoot();
+    if (naltroot != null) {
+      naltroot.delete();
+    } else {
+      node.delete();
+    }
+    return super.visit(node);
+  }
 
-	@Override
-	public boolean visit(final LineComment node) {
-		node.getAlternateRoot().delete();
-		return super.visit(node);
-	}
+  @Override
+  public boolean visit(final LineComment node) {
+    node.getAlternateRoot()
+        .delete();
+    return super.visit(node);
+  }
 }
