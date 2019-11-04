@@ -45,3 +45,12 @@ application {
     // Define the main class for the application
     mainClassName = 'yoshikihigo.jcf.JCodeFlattener'
 }
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'yoshikihigo.jcf.JCodeFlattener'
+    }
+    from { (configurations.runtime).collect { it.isDirectory() ? it : zipTree(it) } } {
+        exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
+    }
+}
